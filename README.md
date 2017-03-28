@@ -302,4 +302,86 @@ $(elementB).on('click', function(){
 
 IE浏览器就是特立独行，它对于事件的操作与标准有一些差异，不过IE浏览器也开始慢慢努力改造，让浏览器变得更加标准。
 
-未完待续（没想到一个小小的事件有这么多门道，可以可以）。
+### IE下绑定事件
+
+在IE下面绑定一个事件监听，在IE9-无法使用标准的`addEventListener`函数，而是使用自家的`attachEvent`，具体用法:
+
+```javascript
+
+element.attachEvent(<event-name>, <callback>);
+
+```
+
+其中`<event-name>`参数需要注意，它需要为事件名称添加`on`前缀，比如有个事件叫`click`，标准事件监听函数监听`click`，IE这里需要监听`onclick`。
+
+另一个，它没有第三个参数，也就是说它只支持监听和冒泡阶段触发的事件，所以为了统一，使用标砖事件监听函数的时候，第三个参数传递fasle。
+
+当然，这个方法在IE9已经被抛弃，在IE11已经被移除，IE也慢慢变好。
+
+### IE中Event对象需要注意的地方
+
+IE中往回调函数中传递的事件对象与标准也有一些差异，你需要使用`window.event`来获取事件对象
+。所以你通常会写下面代码来获取事件对象：
+
+```javascript
+
+event = event || window.event;
+
+```
+
+此外还有一些事件属性有差异，比如比较常用的`event.target`属性，IE中没有，而是使用`event.srcElement`来代替。如果你的回调函数需要处理触发事件的节点，那么需要写：
+
+```javascript
+
+node = event.srcElement || event.target;
+
+```
+
+常见的就是这点，更细节的不在多说。在概念学习中，我们没必要为不标准的东西支付学习成本；实际应用中，类库已经帮我们封装好这些兼容性问题。可喜的是IE浏览器现在也开始不断向标准进步。
+
+### 事件回调函数的作用域问题
+
+与事件绑定在一起的回调函数作用域会有文艺，我们来看一个例子：
+
+[http://jsbin.com/atoluy/1/edit?html,css,js,output](http://jsbin.com/atoluy/1/edit?html,css,js,output)
+
+回调函数调用的`user.greeting`函数作用域应该是在`user`下的，本期望输出`My name is Bob`结果却输出了`My name is undefined`。这是因为事件绑定函数时，该函数会以当前元素为作用域执行。为了证明这一点，我们可以为前面`element`添加属性：
+
+```javascript
+
+element.firstname = 'jiangshui';
+
+```
+
+再次点击，可以正确弹出`My name is jiangshui`。那么我们来解决这个问题。
+
+### 使用匿名函数
+
+我们为回调函数包裹一层匿名函数。
+
+[http://jsbin.com/onomud/1/edit?html,css,js,output](http://jsbin.com/onomud/1/edit?html,css,js,output)
+
+包括市州，虽然匿名函数的作用域被指向事件触发元素，但执行的内容就像直接调用一样，不会影响其作用域，
+
+### 使用bind方法
+
+使用匿名函数是有缺陷的，每次调用都包括在匿名函数里面，增加了冗余代码等，此外如果想使用`removeEventListener`解除绑定，还需要在创建一个函数引用。`Function`类型提供了`bind`方法，可以为函数绑定作用域，无论函数在哪里调用，都不会改变它的作用域，通过如下语句绑定作用域：
+
+```javascript
+
+user.greeting = user.greeting.bind(user);
+
+```
+
+这样我们就可以世界是用：
+
+```javascript
+
+element.addEventListener('click', user.greeting);
+
+```
+
+## 常用事件和技巧
+
+未完待续...
+
