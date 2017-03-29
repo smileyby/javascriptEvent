@@ -383,5 +383,230 @@ element.addEventListener('click', user.greeting);
 
 ## 常用事件和技巧
 
-未完待续...
+用户的操作有很多种，所以有很多时间。为了开发方便，浏览器又提供了一些事件，所有有很多很多的事件。这里只介绍几种常用的事件和使用技巧。
+
+`load`
+
+`load`事件在资源加载完成时触发。这个资源可以是图片、css文件、js文件、视频、document和window等等。
+
+比较常用的就是监听window的`load`事件，当页面内所有资源全部加载完成之后就会触发。比如用JS对图片以及其他资源处理，我们在`load`事件中触发，可以保证JS不会再资源未加载完成就开始处理资源导致报错。
+
+同样的，也可以监听图片等其他资源加载情况。
+
+`beforeunload`
+
+当浏览者在页面上的输入框输入一些内容，未保存、误操作关掉网页可能导致输入情况丢失。
+
+当浏览者输入信息但未保存关掉网页，我们就可以开始监听在这个事件，例如：
+
+```javascript
+
+window.addEventListener('beforeunload', funtion(event){
+	event.returnValue = "放弃当前未保存内容而关闭页面？";
+});
+
+```
+
+这时候试图关闭网页的时候，会弹窗组织操作，点击确认之后才会关闭。当然，如果没有必要，就不要监听，不要以为使用它可以为你留住浏览者。
+
+`resize`
+
+当节点尺寸发生变化时，触发这个事件。通常用window上，这样可以监听浏览器窗口的变化。通常用在负载布局和响应式上。
+
+常见的时差滚动效果网站以及同类比较负载的布局网站，旺旺使用Javascript来计算尺寸，位置。如果用户刁征浏览器大小、尺寸、位置不随着改变则会出现错位情况。在window上监听改时间，触发时调用计算尺寸，位置的函数，可以根据浏览器的大小来重新计算。
+
+但需要主要一点，当浏览器发生任意变化都会触发`resize`事件，哪怕是缩小1px的浏览器宽度，这样刁征浏览器时会触发大量的`resize`事件，你的回调函数就会大量的执行，导致变卡、崩溃等。
+
+你可以使用函数的throttle或者debounce技巧来优化，throttle方法答题思路就是在某一段时间内无论多少次调用，只执行一次，到达事件就执行；debounce方法答题思路就是在某一段时间内等待是否还会重新调用，如果不会再调用，就执行函数，如果还有重复调用，则不执行继续等待。
+
+`error`
+
+当我们加载资源失败或者加载成功但是之家在一部分而无法使用时，就会触发`error`事件，我们可以通过监听该事件来提示一个友好的报错或者进行其他处理。比如JS资源加载失败，则提示尝试刷新；图片资源加载失败，在图片下面提示图片加载失败等的。该事件不会冒泡。因为子节点加载失败，并不意味这父节点加载失败，所以你的处理函数必须精确绑定到目标点。
+
+需要注意的是，对于该事件，你可以使用`addEventListener`等进行监听，，但是有时候会出现失效情况，这是因为`error`事件都触发过了，你的JS监听处理代码还没有加载进来执行。为了避免这种情况，用内联法更好一些：
+
+```html
+
+<img src="not-found.jpg" onerror="doSometing">
+
+```
+
+如果还有其他常用事件，欢迎issue留言补充。
+
+## 用JavaScript模拟触发内置事件
+
+内置事件也可以被Javascript模拟出发，比如下面函数模拟触发单机事件：
+
+```javascript
+
+function simulateClick() {
+	var event = new MouseEvent('click', {
+		'view': window,
+		'bubbles': true,
+		'cancelable': true
+	});
+	var cb = document.getElementById('checkbox');
+	var canceled = !cb.dispatchEvent(event);
+	if (canceled) {
+		alert('canceled');
+	} else {
+		alert('not canceled');
+	}
+};
+
+```
+
+可以看这个[Demo](https://developer.mozilla.org/samples/domref/dispatchEvent.html)来了解更多。
+
+## 自定义事件
+
+我们可以自定义来实现更灵活的开发，事件用好了可以是一件很强大的工具，基于事件的开发有很多优势（后面介绍）。
+
+与自定义事件的函数有`Event`、`CustomEvent`和`dispatchEvent`。
+
+直接自定义事件，使用`Event`构造函数：
+
+```javascript
+
+var event = new Event('build');
+
+// listen for the event
+elem.addEventListener('build', function (e) {...}, false);
+
+// dispatch the event
+elem.dispatchEvent(event);
+
+```
+
+`CustomEvent`可以创建一个更高度自定义事件，还可以附带一些数据，具体如下：
+
+```javascript
+
+var myEvent = new CustomEvent(eventname, options);
+
+```
+
+其中options可以是：
+
+```javascript
+
+{
+	detail: {
+		...
+	},
+	bubbles: true,
+	cancelable: false
+}
+
+```
+
+其中`detail`可以存放一些初始化的信息，可以再触发的时候在调用。其他属性就是定义该事件是否具有冒泡等等功能。
+
+内置的事件会由浏览器根据某些操作进行处罚，自定义的事件就需要人工触发。`dispatchEvent`函数就是用来触发某个事件:
+
+```javascript
+
+element.dispatchEvent(customEvent);
+
+```
+
+上面代码表示，在element上面触发customEvent这个事件。结合起来用就是：
+
+```javascript
+
+// add an appropriate event listener
+obj.addEventListener('cat', function(e) { process(e.detail)});
+
+// create and dispatch the event
+var event = new CustomEvent('cat', {"detail":{"hazcheeseburger":true}});
+obj.dispatch(event);
+
+```
+
+使用自定义事件需要注意兼容性问题，而使用jQuery就简单多了：
+
+```javascript
+
+// 绑定自定义事件
+$(element).on('myCustomEvent', function(){});
+
+// 触发事件
+$(element).trigger('myCustomEvent');
+
+```
+
+此外，你还可以在触发自定义事件时传递更多参数信息：
+
+```javascript
+
+$( "p" ).on( "myCustomEvent", function( event, myName ) {
+  $( this ).text( myName + ", hi there!" );
+});
+$( "button" ).click(function () {
+  $( "p" ).trigger( "myCustomEvent", [ "John" ] );
+});
+
+```
+
+更多详细的用法请看[introduction-to-custom-events](http://learn.jquery.com/events/introduction-to-custom-events/)，这里不再赘述。
+
+## 在开发中应用事件
+
+当我们操作某一个DOM，发出一个事件，我们可以砸四另一个地方写代码捕获这个事件执行处理逻辑。触发操作和捕获处理操作是分开的。我们可以根据这个特性来对程序解耦。
+
+### 用事件解耦
+
+我们可以讲一整个的功能，分割成独立的小功能，每个小功能绑定一个事件，由一个“控制器”负责根据条件触发某个事件。这样，在外面触发这个事件，也可以调用对应功能，时期更加灵活。
+
+![](http://jiangshui.b0.upaiyun.com/blog/2014/12/event2.png)
+
+在《基于 MVC 的 JavaScript Web 富应用开发》一书中，有更加具体的实例，有兴趣的朋友可以买本看看。
+
+## 发布（Publish）和订阅（Subscribe）模式
+
+针对上面这种用法，继续抽象一下，就是发布和订阅开发模式。正如其名，这种模式有两个角色：发布者和订阅者，此外有一条信道，发布者被触发往这个信道里面发信，订阅者从这个信道里面收信，如果收到特定信件则执行某个对应的逻辑。这样，发布者和订阅者之间是完全解耦的，只有一条信道连接。这样就非常容易扩展，也不会引入额外的依赖。
+
+这样如果需要添加新功能，只需要添加一个新的订阅者（及其执行逻辑），监听信道中某一类新的信件。再在应用中通过发布者发送一类新的信件即可。
+
+具体实现，这里推荐 cowboy 开发的 [Tiny Pub Sub](https://github.com/cowboy/jquery-tiny-pubsub)，通过 jQuery 实现，非常简洁直观，jQuery 太赞。代码就这几行：
+
+```javascript
+
+(function($) {
+
+  var o = $({});
+
+  $.subscribe = function() {
+    o.on.apply(o, arguments);
+  };
+
+  $.unsubscribe = function() {
+    o.off.apply(o, arguments);
+  };
+
+  $.publish = function() {
+    o.trigger.apply(o, arguments);
+  };
+
+}(jQuery));
+
+```
+
+定义一个对象作为信道，然后提供了三个方法，订阅者、取消订阅、发布者。
+
+## 总结和扩展阅读
+
+事件有关的基础知识基本就这些，更多的还有待你继续挖掘。本文资料参考和推荐扩展阅读如下（感谢他们）：
+
+*	[DOM-Level-3-Events](http://www.w3.org/TR/DOM-Level-3-Events/)
+*	[Event on MDN](https://developer.mozilla.org/en/docs/Web/API/Event)
+*	[Events of jQuery](http://api.jquery.com/category/events/)
+*	[Introducing Custom Events](http://learn.jquery.com/events/introduction-to-custom-events/)
+*	[An Introduction To DOM Events](https://www.smashingmagazine.com/2013/11/an-introduction-to-dom-events/)
+*	《基于 MVC 的 JavaScript Web 富应用开发》
+
+
+
+
+
 
